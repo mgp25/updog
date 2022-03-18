@@ -46,10 +46,11 @@ def parse_arguments():
 def main():
     args = parse_arguments()
 
-    app = Flask(__name__)
+    app = Flask(__name__, template_folder='{0}/{1}'.format(os.path.abspath(os.path.dirname(__file__)), 'templates'))
     auth = HTTPBasicAuth()
 
     global base_directory
+    file_download_limit = {}
     base_directory = args.directory
 
     # Deal with Favicon requests
@@ -85,16 +86,24 @@ def main():
                 else:
                     send_as_attachment = False
 
-                # Check if file extension
+                 # Check if file extension
                 (filename, extension) = os.path.splitext(requested_path)
-                if extension == '':
-                    mimetype = 'text/plain'
-                else:
-                    mimetype = None
+                path, file = os.path.split(filename)
 
-                try:
-                    return send_file(requested_path, mimetype=mimetype, as_attachment=send_as_attachment)
-                except PermissionError:
+                if file in file_download_limit and file_download_limit[file] > 0:
+
+                    if extension == '':
+                        mimetype = 'text/plain'
+                    else:
+                        mimetype = None
+
+                    try:
+                        if file in file_download_limit and file_download_limit[file] > 0:
+                            file_download_limit[file] = file_download_limit[file] -1
+                        return send_file(requested_path, mimetype=mimetype, as_attachment=send_as_attachment)
+                    except PermissionError:
+                        abort(403, 'Read Permission Denied: ' + requested_path)
+                if file in file_download_limit and file_download_limit[file] == 0:
                     abort(403, 'Read Permission Denied: ' + requested_path)
 
         else:
@@ -111,7 +120,7 @@ def main():
                 abort(403, 'Read Permission Denied: ' + requested_path)
 
             return render_template('home.html', files=directory_files, back=back,
-                                   directory=requested_path, is_subdirectory=is_subdirectory, version=VERSION)
+                                   directory=requested_path, is_subdirectory=is_subdirectory, version=VERSION, limits=file_download_limit)
         else:
             return redirect('/')
 
@@ -148,6 +157,23 @@ def main():
                         file.save(full_path)
                     except PermissionError:
                         abort(403, 'Write Permission Denied: ' + full_path)
+
+            return redirect(request.referrer)
+
+    #############################
+    #    Set download limit     #
+    #############################
+    @app.route('/limit', methods=['GET'])
+    @auth.login_required
+    def limit():
+        if request.method == 'GET':
+            file = request.args.get('file')
+            limit = request.args.get('limit')
+
+            try:
+                file_download_limit[file] = int(limit)
+            except:
+                pass
 
             return redirect(request.referrer)
 

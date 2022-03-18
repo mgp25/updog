@@ -1,0 +1,9 @@
+
+.input-border {
+    border: 1px solid black !important;
+    border-radius: 1px !important;
+}
+
+.hide-submit {
+    display: none !important;
+}

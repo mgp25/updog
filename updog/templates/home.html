@@ -8,6 +8,7 @@
     <!-- Title -->
     <title>updog - {{ directory }}</title>
     <!-- Stylesheets -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='vendor/fontawesome-5.1/css/all.min.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='vendor/datatable/datatables.min.css') }}">
@@ -69,6 +70,7 @@
                 <th>Size</th>
                 <th>Last Modified</th>
                 <th></th> <!-- View file -->
+                <th>Set download limit</th> <!-- View file -->
             </tr>
             </thead>
             <tbody>
@@ -93,6 +95,18 @@
                 <td> <!-- View file -->
                     {% if not file.is_dir %}
                     <a href="/{{ file.rel_path }}?view">View in browser</a>
+                    {% endif %}
+                </td>
+                <td> <!-- Set download limit -->
+                    {% if not file.is_dir %}
+                    <form id="limit" action="/limit" method="get">
+                        <input name="file" type="hidden" value="{{ file.name }}">
+                        {% if file.name in limits %}
+                        <input type="text" size="1" class="input-border" style="text-align:center;" placeholder="" aria-controls="tableData" name="limit"  value="{{ limits[file.name] }}"> <label><input type="submit" class="hide-submit"><img src="{{ url_for('static', filename='images/checked.svg') }}" width="20"></label>
+                        {% else %}
+                        <input type="text" size="1" class="input-border" style="text-align:center;" placeholder="" aria-controls="tableData" name="limit"> <label><input type="submit" class="hide-submit"><img src="{{ url_for('static', filename='images/checked.svg') }}" width="20"></label>
+                        {% endif %}
+                    </form>
                     {% endif %}
                 </td>
             </tr>
